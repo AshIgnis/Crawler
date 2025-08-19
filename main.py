@@ -8,13 +8,12 @@ driver = webdriver.Chrome()
 
 service = Service()
 
-url = "https://cc.lianjia.com/ershoufang/"
+url = "https://sh.lianjia.com/ershoufang/"
 
 driver.get(url)
 
 
 result_list = []
-# 主循环，采集每一页
 for i in range(1, 3):
     house_links = driver.find_elements(By.CSS_SELECTOR, 'ul.sellListContent li .title a')
     for element_link in house_links:
@@ -33,13 +32,10 @@ for i in range(1, 3):
         }
         href = element_link.get_attribute('href')
         
-        # 记录主窗口句柄
         main_window = driver.current_window_handle
         
-        # 新开标签页
         driver.execute_script(f"window.open('{href}');")
         
-        # 切换到新窗口
         new_window = None
         for handle in driver.window_handles:
             if handle != main_window:
@@ -86,10 +82,16 @@ for i in range(1, 3):
         except:
             pass
         try:
-            property_type = driver.find_element(By.CSS_SELECTOR,'div.area > div.subInfo').text.strip()
-            data_dict['房子类型'] = property_type
+            property_type = driver.find_element(By.CSS_SELECTOR,'div.area > div.subInfo.noHidden').text.strip()
+            match = re.match(r'(\d{4})年建/(.+)', property_type)
+            if match:
+                data_dict['年份'] = match.group(1)
+                data_dict['房子类型'] = match.group(2)
+            else:
+                data_dict['房子类型'] = property_type
         except:
             pass
+
         try:
             total_price = driver.find_element(By.CSS_SELECTOR,'div.price span.total').text.strip()
             unit = driver.find_element(By.CSS_SELECTOR, 'div.price span.unit span').text.strip()
@@ -108,26 +110,22 @@ for i in range(1, 3):
             pass
 
         result_list.append(data_dict)
-        # 关闭详情页标签，切回主页面
+
         try:
-            # 确保当前窗口存在且可以关闭
             if new_window and len(driver.window_handles) > 1:
                 driver.close()
-            # 切换回主窗口
             driver.switch_to.window(main_window)
         except Exception as e:
             print(f"窗口切换异常: {e}")
-            # 确保回到主窗口
             try:
                 driver.switch_to.window(main_window)
             except:
                 pass
        
-    # 翻页，找到"下一页"按钮
     try:
         next_page_btn = driver.find_element(By.XPATH, '//a[contains(text(), "下一页")]')
         next_page_btn.click()
-        time.sleep(0.6)  # 等待新页面加载
+        time.sleep(0.6)
     except Exception as e:
         print('未找到下一页，或已到最后一页')
         break
