@@ -25,7 +25,7 @@ for a in a_list:
     img = domain + img_tag.lstrip("/")
 
     img_resp = requests.get(img, headers=headers)
-    with open(img_tag.split("/")[-1], mode="wb") as f:
+    with open("img/"+img_tag.split("/")[-1], mode="wb") as f:
             f.write(img_resp.content)
     time.sleep(0.5)
     child_resp.close()
